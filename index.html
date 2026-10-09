@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Setcard</title>
+<meta name="description" content="Scan a gym machine's QR code or barcode and see your saved settings, weight, sets and reps. Works offline.">
+<meta name="theme-color" content="#2350c4">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="wrap" id="home">
+  <header class="top">
+    <h1>Setcard</h1>
+    <span id="count" class="muted num"></span>
+  </header>
+
+  <button class="scan" id="scanBtn" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 7V4h3M18 4h3v3M21 17v3h-3M6 20H3v-3"/><path d="M7 12h10M8 9v6M16 9v6"/></svg>
+    <strong data-i18n="scan">Scan machine</strong>
+    <span data-i18n="scanHint">QR code or barcode on the machine</span>
+  </button>
+
+  <div id="status" class="status" hidden></div>
+  <div id="updateBar" class="status" hidden>
+    <span data-i18n="updateReady">A new version is ready.</span>
+    <button type="button" id="updateBtn" class="small primary" data-i18n="reload">Reload</button>
+  </div>
+
+  <div class="row">
+    <input id="search" type="search" data-i18n-ph="find" placeholder="Find a machine" aria-label="Find a machine">
+    <button id="addManual" type="button" data-i18n="addNoCode">Add without code</button>
+  </div>
+
+  <ul class="list" id="list"></ul>
+  <div class="empty" id="empty" hidden>
+    <b data-i18n="emptyTitle">No machines yet</b>
+    <span data-i18n="emptyBody">Tap “Scan machine” and point the camera at the code on the front of a machine. The first time, you enter its name, your seat and lever settings, the weight, sets and reps. Next time, scanning the same code opens them right away.</span>
+  </div>
+
+  <details class="more" id="more">
+    <summary data-i18n="dataAndSettings">Data and settings</summary>
+    <div class="morebody">
+      <div class="field">
+        <span class="label" data-i18n="language">Language</span>
+        <div class="seg" role="group" aria-label="Language">
+          <button type="button" data-lang="de">Deutsch</button>
+          <button type="button" data-lang="en">English</button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="label" data-i18n="backup">Backup</span>
+        <p class="note" data-i18n="backupNote">Your machines are stored only on this phone. Export a backup file now and then, or to move to a new phone.</p>
+        <div class="row">
+          <button type="button" id="exportBtn" data-i18n="export">Export backup</button>
+          <label class="btn" for="importFile"><span data-i18n="import">Import backup</span><input id="importFile" type="file" accept="application/json,.json" hidden></label>
+        </div>
+      </div>
+      <div class="field" id="installBox" hidden>
+        <span class="label" data-i18n="install">Install</span>
+        <button type="button" id="installBtn" class="primary" data-i18n="installBtn">Add to home screen</button>
+      </div>
+      <p class="note" id="storageNote"></p>
+      <p class="note"><a href="https://github.com/blablubbbb/gym_machine" target="_blank" rel="noopener" data-i18n="source">Source code on GitHub</a> · <span id="appVersion"></span></p>
+    </div>
+  </details>
+</div>
+
+<!-- Machine editor -->
+<section class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="wrap">
+    <div class="sheethead">
+      <button class="ghost" id="close" type="button" data-i18n="back">← Back</button>
+      <span class="label" id="sheetKind"></span>
+    </div>
+    <h2 id="sheetTitle"></h2>
+
+    <div class="linkbox" id="linkBox" hidden>
+      <span data-i18n="linkQ">Already saved this machine without this code?</span>
+      <div class="row">
+        <select id="linkSelect" aria-label="Machine"></select>
+        <button type="button" id="linkBtn" data-i18n="link">Link code</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label" for="fName" data-i18n="name">Name</label>
+      <input id="fName" data-i18n-ph="namePh" placeholder="e.g. Leg press" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <span class="label" data-i18n="load">Load</span>
+      <div class="trio">
+        <label class="unit"><input id="fWeight" inputmode="decimal" placeholder="–"><span>kg</span></label>
+        <label class="unit"><input id="fSets" inputmode="numeric" placeholder="–"><span data-i18n="sets">sets</span></label>
+        <label class="unit"><input id="fReps" inputmode="numeric" placeholder="–"><span data-i18n="reps">reps</span></label>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="label" data-i18n="settings">Machine settings</span>
+      <div class="settings" id="settings"></div>
+      <button type="button" id="addSetting" data-i18n="addSetting">+ Add setting</button>
+    </div>
+
+    <div class="field">
+      <label class="label" for="fNotes" data-i18n="notes">Notes</label>
+      <textarea id="fNotes" data-i18n-ph="notesPh" placeholder="Grip, tempo, what to change next time"></textarea>
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="save" type="button" data-i18n="save">Save</button>
+      <button id="logToday" type="button" data-i18n="logToday">Log today</button>
+    </div>
+    <p class="note" data-i18n="logNote">“Log today” saves and adds today's weight, sets and reps to the history.</p>
+
+    <div class="field" id="historyBox" hidden>
+      <span class="label" data-i18n="history">History</span>
+      <ul class="log" id="history"></ul>
+    </div>
+
+    <div class="field" id="codesBox" hidden>
+      <span class="label" data-i18n="codes">Codes for this machine</span>
+      <ul class="codes" id="codes"></ul>
+    </div>
+
+    <div id="delBox">
+      <button class="ghost danger" id="del" type="button" data-i18n="delete">Delete machine</button>
+      <div class="confirm" id="confirm" hidden>
+        <span data-i18n="deleteQ">Delete this machine and its history?</span>
+        <div class="row"><button class="dangerbtn" id="delYes" type="button" data-i18n="deleteYes">Delete</button><button id="delNo" type="button" data-i18n="keep">Keep</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Scanner -->
+<section class="scanner" id="scanner" hidden role="dialog" aria-modal="true" aria-label="Scanner">
+  <video id="video" playsinline muted></video>
+  <div class="frame" aria-hidden="true"></div>
+  <div class="scanbar">
+    <p id="scanMsg" data-i18n="aim">Point the camera at the code</p>
+    <div class="row center">
+      <button type="button" id="torchBtn" hidden data-i18n="light">Light</button>
+      <label class="btn" for="photo"><span data-i18n="photo">Take photo instead</span><input id="photo" type="file" accept="image/*" capture="environment" hidden></label>
+      <button type="button" id="scanCancel" class="primary" data-i18n="cancel">Cancel</button>
+    </div>
+  </div>
+</section>
+
+<!-- Import confirm -->
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script src="vendor/jsQR.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

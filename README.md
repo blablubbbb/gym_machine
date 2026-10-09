@@ -19,7 +19,7 @@ Setcard is a small web app for your phone. Scan the QR code or barcode on a gym 
 - “Log today” keeps a history of what you lifted
 - Machines without a code can be added by hand; a code can be linked to a machine later
 - Works offline after the first visit and can be installed on the home screen
-- German and English
+- German, English and Simplified Chinese (picked from the browser's preferred languages, changeable under **Data and settings**)
 - Backup export and import as a JSON file
 
 ## Install on your phone (Android, Chrome)
@@ -50,6 +50,8 @@ Plain HTML, CSS and JavaScript, no build step. Serve the folder with any static 
 - `sw.js` – service worker that stores the app on the phone for offline use. **Raise the `CACHE` version whenever you change a file**, otherwise phones keep the old version.
 - `manifest.webmanifest`, `icons/` – home screen installation
 - `vendor/jsQR.js` – QR decoder for browsers without the built-in barcode scanner
+
+To add a language, copy the `en` block in `TEXT` at the top of `app.js`, translate it, add an `<option>` to `#langSelect` in `index.html` and a date locale to `LOCALES`.
 
 ## Licenses
 

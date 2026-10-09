@@ -7,8 +7,8 @@
 :root{
   --bg:#eceff2; --surface:#ffffff; --ink:#161b21; --muted:#5b6571; --line:#d3d8de;
   --accent:#2350c4; --accent-ink:#ffffff; --accent-soft:#e3eaf9; --danger:#b3261e;
-  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
-  --body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root{
@@ -63,11 +63,6 @@ textarea{min-height:84px;resize:vertical}
 .more{border-top:1px solid var(--line);padding-top:12px}
 .more summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:36px;display:flex;align-items:center}
 .morebody{display:flex;flex-direction:column;gap:16px;padding-top:8px}
-.seg{display:flex;gap:0}
-.seg button{border-radius:0;flex:1}
-.seg button:first-child{border-radius:10px 0 0 10px}
-.seg button:last-child{border-radius:0 10px 10px 0;border-left:0}
-.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 
 /* Editor */
 .sheet{position:fixed;inset:0;background:var(--bg);overflow-y:auto;z-index:10;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}

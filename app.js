@@ -1,7 +1,7 @@
 /* Setcard — offline gym machine notes. MIT License. */
 (function () {
   "use strict";
-  var APP_VERSION = "1.0.0";
+  var APP_VERSION = "1.1.0";
   var KEY = "setcard.v1";
   var LANG_KEY = "setcard.lang";
   var $ = function (id) { return document.getElementById(id); };
@@ -65,11 +65,49 @@
       notPersisted: "Speicher: Der Browser kann ihn bei wenig Platz löschen. Installiere die App und exportiere Sicherungen.",
       seat: "Sitz", backRest: "Rückenlehne", remove: "Entfernen", removeSetting: "Einstellung entfernen",
       settingName: "Einstellung", settingValue: "Wert", version: "Version"
+    },
+    zh: {
+      scan: "扫描器械", scanHint: "扫描器械上的二维码或条形码", find: "查找器械",
+      addNoCode: "不扫码添加", emptyTitle: "还没有器械",
+      emptyBody: "点击“扫描器械”，用摄像头对准器械正面的码。第一次扫描时，输入器械名称、座椅和杠杆设置、重量、组数和次数。下次扫描同一个码，就会直接显示这些设置。",
+      dataAndSettings: "数据和设置", language: "语言", backup: "备份",
+      backupNote: "你的器械只保存在这部手机上。请不时导出备份文件，换新手机时也需要用到。",
+      export: "导出备份", import: "导入备份", install: "安装", installBtn: "添加到主屏幕",
+      source: "GitHub 上的源代码", back: "← 返回", linkQ: "已经保存过这台器械，但当时没有扫这个码？",
+      link: "关联此码", name: "名称", namePh: "例如：腿举机", load: "负荷", sets: "组", reps: "次",
+      settings: "器械设置", addSetting: "+ 添加设置", notes: "备注",
+      notesPh: "握法、节奏、下次要调整的地方", save: "保存", logToday: "记录今天",
+      logNote: "“记录今天”会保存，并把今天的重量、组数和次数加入历史记录。",
+      history: "历史记录", codes: "此器械的码", delete: "删除器械",
+      deleteQ: "删除这台器械及其历史记录？", deleteYes: "删除", keep: "保留",
+      aim: "将摄像头对准码", light: "照明", photo: "改为拍照", cancel: "取消",
+      updateReady: "有新版本可用。", reload: "重新加载",
+      newMachine: "新器械", newCode: "新的码", noCode: "无码", unnamed: "未命名器械",
+      machine: "台器械", machines: "台器械", updated: "更新于", noMatch: "没有与“{q}”匹配的器械。",
+      saved: "已保存", logged: "已记录今天的训练", deleted: "已删除", linked: "码已关联",
+      saveFailed: "保存失败。手机存储空间可能已满。",
+      noCodeFound: "照片中没有找到码。请靠近一些，让码占画面的三分之一左右，并保持清晰。",
+      reading: "正在读取码…", camDenied: "无法使用摄像头。请在 Chrome 设置中允许此网站使用摄像头，或点击“改为拍照”。",
+      noScanner: "此浏览器无法实时扫描。请点击“改为拍照”。",
+      exported: "备份已导出", imported: "已导入 {n} 台器械", importBad: "此文件不是 Setcard 备份。",
+      persisted: "存储：已防止被自动清理。",
+      notPersisted: "存储：手机空间不足时，浏览器可能会清除数据。请安装应用并导出备份。",
+      seat: "座椅", backRest: "靠背", remove: "移除", removeSetting: "移除设置",
+      settingName: "设置项", settingValue: "数值", version: "版本"
     }
   };
   var lang = "en";
   try { lang = localStorage.getItem(LANG_KEY) || ""; } catch (e) { lang = ""; }
-  if (!TEXT[lang]) lang = /^de/i.test(navigator.language || "") ? "de" : "en";
+  var LOCALES = { en: "en-GB", de: "de-DE", zh: "zh-CN" };
+  // First language in the browser's preferred list that the app supports
+  if (!TEXT[lang]) {
+    lang = "en";
+    var prefs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "en"];
+    for (var li = 0; li < prefs.length; li++) {
+      var base = String(prefs[li]).toLowerCase().split("-")[0];
+      if (TEXT[base]) { lang = base; break; }
+    }
+  }
   function t(k, vars) {
     var s = (TEXT[lang] && TEXT[lang][k]) || TEXT.en[k] || k;
     if (vars) Object.keys(vars).forEach(function (v) { s = s.replace("{" + v + "}", vars[v]); });
@@ -81,7 +119,7 @@
     document.querySelectorAll("[data-i18n-ph]").forEach(function (el) {
       el.placeholder = t(el.getAttribute("data-i18n-ph")); el.setAttribute("aria-label", el.placeholder);
     });
-    document.querySelectorAll("[data-lang]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.lang === lang)); });
+    $("langSelect").value = lang;
     $("appVersion").textContent = t("version") + " " + APP_VERSION;
     updateStorageNote();
     render();
@@ -111,7 +149,7 @@
     if (!ms) return "";
     var d = new Date(ms), opts = { day: "numeric", month: "short" };
     if (d.getFullYear() !== new Date().getFullYear()) opts.year = "numeric";
-    return d.toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", opts);
+    return d.toLocaleDateString(LOCALES[lang] || "en-GB", opts);
   }
   function fmtWeight(w) { return w ? (lang === "de" ? String(w).replace(".", ",") : String(w)) + " kg" : ""; }
   function loadText(w, s, r) {
@@ -454,8 +492,10 @@
   $("exportBtn").addEventListener("click", exportBackup);
   $("importFile").addEventListener("change", function (e) { var f = e.target.files && e.target.files[0]; e.target.value = ""; if (f) importBackup(f); });
   $("installBtn").addEventListener("click", function () { if (installEvt) { installEvt.prompt(); installEvt = null; $("installBox").hidden = true; } });
-  document.querySelectorAll("[data-lang]").forEach(function (b) {
-    b.addEventListener("click", function () { lang = b.dataset.lang; try { localStorage.setItem(LANG_KEY, lang); } catch (e) {} applyLang(); });
+  $("langSelect").addEventListener("change", function () {
+    lang = TEXT[this.value] ? this.value : "en";
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+    applyLang();
   });
   // Android back button closes the scanner or editor instead of leaving the app
   window.addEventListener("popstate", function () { closeScanner(true); closeSheet(true); });

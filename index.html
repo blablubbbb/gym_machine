@@ -46,11 +46,12 @@
     <summary data-i18n="dataAndSettings">Data and settings</summary>
     <div class="morebody">
       <div class="field">
-        <span class="label" data-i18n="language">Language</span>
-        <div class="seg" role="group" aria-label="Language">
-          <button type="button" data-lang="de">Deutsch</button>
-          <button type="button" data-lang="en">English</button>
-        </div>
+        <label class="label" for="langSelect" data-i18n="language">Language</label>
+        <select id="langSelect">
+          <option value="de">Deutsch</option>
+          <option value="en">English</option>
+          <option value="zh">简体中文</option>
+        </select>
       </div>
       <div class="field">
         <span class="label" data-i18n="backup">Backup</span>

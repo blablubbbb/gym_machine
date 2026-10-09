@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Setcard</title>
+<title>Gym Machine</title>
+<meta name="application-name" content="Gym Machine">
 <meta name="description" content="Scan a gym machine's QR code or barcode and see your saved settings, weight, sets and reps. Works offline.">
 <meta name="theme-color" content="#2350c4">
 <link rel="manifest" href="manifest.webmanifest">
@@ -15,8 +16,14 @@
 
 <div class="wrap" id="home">
   <header class="top">
-    <h1>Setcard</h1>
-    <span id="count" class="muted num"></span>
+    <div class="titleblock">
+      <h1>Gym Machine</h1>
+      <span id="count" class="muted num"></span>
+    </div>
+    <button type="button" id="homeTimer" class="timerbtn num" aria-label="Rest timer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+      <span id="homeTimerLabel">1:30</span>
+    </button>
   </header>
 
   <button class="scan" id="scanBtn" type="button">
@@ -52,6 +59,14 @@
           <option value="en">English</option>
           <option value="zh">简体中文</option>
         </select>
+      </div>
+      <div class="field">
+        <label class="label" for="defaultRest" data-i18n="defaultRest">Default rest between sets</label>
+        <div class="restrow">
+          <input id="defaultRest" inputmode="numeric" class="num" autocomplete="off">
+          <span class="muted" data-i18n="sec">s</span>
+        </div>
+        <p class="note" data-i18n="defaultRestNote">Used for every machine without its own rest time.</p>
       </div>
       <div class="field">
         <span class="label" data-i18n="backup">Backup</span>
@@ -103,6 +118,15 @@
     </div>
 
     <div class="field">
+      <label class="label" for="fRest" data-i18n="rest">Rest between sets</label>
+      <div class="restrow">
+        <input id="fRest" inputmode="numeric" class="num" autocomplete="off">
+        <span class="muted" data-i18n="sec">s</span>
+      </div>
+      <p class="note" id="restNote"></p>
+    </div>
+
+    <div class="field">
       <span class="label" data-i18n="settings">Machine settings</span>
       <div class="settings" id="settings"></div>
       <button type="button" id="addSetting" data-i18n="addSetting">+ Add setting</button>
@@ -112,6 +136,11 @@
       <label class="label" for="fNotes" data-i18n="notes">Notes</label>
       <textarea id="fNotes" data-i18n-ph="notesPh" placeholder="Grip, tempo, what to change next time"></textarea>
     </div>
+
+    <button type="button" id="sheetTimer" class="timerstart num">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+      <span id="sheetTimerLabel"></span>
+    </button>
 
     <div class="actions">
       <button class="primary" id="save" type="button" data-i18n="save">Save</button>
@@ -153,7 +182,19 @@
   </div>
 </section>
 
-<!-- Import confirm -->
+<!-- Rest timer -->
+<div class="timerbar" id="timerBar" hidden role="timer" aria-live="off">
+  <div class="timerinfo">
+    <span class="label" id="timerWhat"></span>
+    <span class="timerclock num" id="timerClock">1:30</span>
+  </div>
+  <div class="timerctl">
+    <button type="button" id="timerPlus" class="num">+15</button>
+    <button type="button" id="timerStop" data-i18n="stop">Stop</button>
+  </div>
+  <div class="timerprogress" aria-hidden="true"><i id="timerFill"></i></div>
+</div>
+
 <div class="toast" id="toast" hidden role="status"></div>
 
 <script src="vendor/jsQR.js"></script>

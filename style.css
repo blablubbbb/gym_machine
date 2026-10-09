@@ -1,4 +1,4 @@
-/* Setcard — one-column phone tool: big scan action, machine list, full-screen editor and scanner */
+/* Gym Machine — one-column phone tool: big scan action, machine list, full-screen editor and scanner */
 @font-face{font-family:"Barlow";font-weight:400;font-display:swap;src:url(fonts/barlow-400.woff) format("woff")}
 @font-face{font-family:"Barlow";font-weight:600;font-display:swap;src:url(fonts/barlow-600.woff) format("woff")}
 @font-face{font-family:"Barlow Condensed";font-weight:600;font-display:swap;src:url(fonts/barlow-condensed-600.woff) format("woff")}
@@ -84,12 +84,37 @@ textarea{min-height:84px;resize:vertical}
 .confirm{border:1px solid var(--danger);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px}
 
 /* Scanner */
-.scanner{position:fixed;inset:0;background:#000;z-index:20;display:flex;flex-direction:column}
+.scanner{position:fixed;inset:0;background:#000;z-index:30;display:flex;flex-direction:column}
 .scanner video{flex:1;width:100%;min-height:0;object-fit:cover}
 .frame{position:absolute;left:50%;top:40%;width:min(70vw,300px);aspect-ratio:1;max-width:100%;transform:translate(-50%,-50%);border-radius:18px;box-shadow:0 0 0 2000px rgba(0,0,0,.35);border:3px solid rgba(255,255,255,.9)}
 .scanbar{background:var(--bg);color:var(--ink);padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px;text-align:center}
 .scanbar p{margin:0;font-weight:600}
 
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;z-index:30;font-size:15px;max-width:calc(100% - 32px);text-align:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;z-index:40;font-size:15px;max-width:calc(100% - 32px);text-align:center}
 
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(16px);opacity:.6}to{transform:none;opacity:1}}}
+
+/* Header timer button */
+.titleblock{display:flex;flex-direction:column;gap:2px;min-width:0}
+.top{align-items:center}
+.timerbtn{gap:6px;font-family:var(--display);font-size:20px;padding:6px 12px;border-radius:999px}
+.timerbtn svg{width:20px;height:20px}
+.restrow{display:flex;align-items:center;gap:8px}
+.restrow input{max-width:120px;text-align:center;font-family:var(--display);font-size:22px;font-weight:600}
+.timerstart svg{width:22px;height:22px}
+.timerstart{width:100%;background:var(--accent-soft);border-color:transparent;color:var(--ink);font-family:var(--display);font-size:22px;min-height:52px}
+
+/* Countdown bar */
+.timerbar{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--ink);color:var(--bg);padding:12px 16px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.timerbar .label{color:inherit;opacity:.75}
+.timerinfo{display:flex;flex-direction:column;min-width:0}
+.timerclock{font-family:var(--display);font-weight:700;font-size:44px;line-height:1}
+.timerctl{display:flex;gap:8px}
+.timerctl button{background:transparent;color:inherit;border-color:currentColor;min-width:64px}
+.timerprogress{position:absolute;left:0;right:0;top:0;height:4px;background:transparent}
+.timerprogress i{display:block;height:100%;width:0;background:var(--accent)}
+.timerbar.done{background:var(--accent);color:var(--accent-ink)}
+.timerbar.done .timerprogress i{background:transparent}
+body.timing .wrap{padding-bottom:140px}
+body.timing .toast{bottom:calc(110px + env(safe-area-inset-bottom,0px))}
+@media (prefers-reduced-motion:no-preference){.timerbar.done{animation:pulse 1s ease-in-out 3}@keyframes pulse{50%{filter:brightness(1.25)}}}

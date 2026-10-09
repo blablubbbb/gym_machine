@@ -1,6 +1,6 @@
 {
-  "name": "Setcard",
-  "short_name": "Setcard",
+  "name": "Gym Machine",
+  "short_name": "Gym Machine",
   "description": "Scan a gym machine's QR code or barcode and see your saved settings, weight, sets and reps. Works offline.",
   "start_url": "./",
   "scope": "./",

@@ -1,8 +1,10 @@
-/* Setcard — offline gym machine notes. MIT License. */
+/* Gym Machine — offline gym machine notes. MIT License. */
 (function () {
   "use strict";
-  var APP_VERSION = "1.1.0";
+  var APP_VERSION = "1.2.0";
+  // Storage keys keep the old "setcard" prefix so existing data survives the rename
   var KEY = "setcard.v1";
+  var PREFS_KEY = "setcard.prefs";
   var LANG_KEY = "setcard.lang";
   var $ = function (id) { return document.getElementById(id); };
 
@@ -31,11 +33,15 @@
       noCodeFound: "No code found in that photo. Hold the phone closer so the code fills about a third of the picture, and keep it sharp.",
       reading: "Reading code…", camDenied: "The camera isn't available. Allow camera access for this site in Chrome's settings, or use “Take photo instead”.",
       noScanner: "This browser can't scan live. Use “Take photo instead”.",
-      exported: "Backup exported", imported: "Imported {n} machines", importBad: "That file isn't a Setcard backup.",
+      exported: "Backup exported", imported: "Imported {n} machines", importBad: "That file isn't a Gym Machine backup.",
       persisted: "Storage: protected from automatic clean-up.",
       notPersisted: "Storage: the browser may clear it if the phone runs low on space. Install the app and export backups to be safe.",
       seat: "Seat", backRest: "Back rest", remove: "Remove", removeSetting: "Remove setting",
-      settingName: "Setting", settingValue: "Value", version: "Version"
+      settingName: "Setting", settingValue: "Value", version: "Version",
+      restTimer: "Rest timer", rest: "Rest between sets", sec: "s", defaultRest: "Default rest between sets",
+      defaultRestNote: "In seconds. Used for every machine without its own rest time.",
+      restNote: "Leave empty to use your default ({t}).", startRest: "Start rest · {t}", restLabel: "Rest",
+      go: "Next set!", stop: "Stop", defaultTag: "default"
     },
     de: {
       scan: "Gerät scannen", scanHint: "QR-Code oder Barcode am Gerät", find: "Gerät suchen",
@@ -60,11 +66,15 @@
       noCodeFound: "Kein Code auf dem Foto gefunden. Geh näher heran, sodass der Code etwa ein Drittel des Bildes füllt, und halte das Handy ruhig.",
       reading: "Code wird gelesen…", camDenied: "Die Kamera ist nicht verfügbar. Erlaube den Kamerazugriff für diese Seite in den Chrome-Einstellungen oder nutze „Stattdessen Foto aufnehmen“.",
       noScanner: "Dieser Browser kann nicht live scannen. Nutze „Stattdessen Foto aufnehmen“.",
-      exported: "Sicherung exportiert", imported: "{n} Geräte importiert", importBad: "Diese Datei ist keine Setcard-Sicherung.",
+      exported: "Sicherung exportiert", imported: "{n} Geräte importiert", importBad: "Diese Datei ist keine Gym-Machine-Sicherung.",
       persisted: "Speicher: vor automatischem Löschen geschützt.",
       notPersisted: "Speicher: Der Browser kann ihn bei wenig Platz löschen. Installiere die App und exportiere Sicherungen.",
       seat: "Sitz", backRest: "Rückenlehne", remove: "Entfernen", removeSetting: "Einstellung entfernen",
-      settingName: "Einstellung", settingValue: "Wert", version: "Version"
+      settingName: "Einstellung", settingValue: "Wert", version: "Version",
+      restTimer: "Pausentimer", rest: "Pause zwischen Sätzen", sec: "s", defaultRest: "Standardpause zwischen Sätzen",
+      defaultRestNote: "In Sekunden. Gilt für alle Geräte ohne eigene Pausenzeit.",
+      restNote: "Leer lassen für deine Standardpause ({t}).", startRest: "Pause starten · {t}", restLabel: "Pause",
+      go: "Nächster Satz!", stop: "Stopp", defaultTag: "Standard"
     },
     zh: {
       scan: "扫描器械", scanHint: "扫描器械上的二维码或条形码", find: "查找器械",
@@ -89,11 +99,15 @@
       noCodeFound: "照片中没有找到码。请靠近一些，让码占画面的三分之一左右，并保持清晰。",
       reading: "正在读取码…", camDenied: "无法使用摄像头。请在 Chrome 设置中允许此网站使用摄像头，或点击“改为拍照”。",
       noScanner: "此浏览器无法实时扫描。请点击“改为拍照”。",
-      exported: "备份已导出", imported: "已导入 {n} 台器械", importBad: "此文件不是 Setcard 备份。",
+      exported: "备份已导出", imported: "已导入 {n} 台器械", importBad: "此文件不是 Gym Machine 备份。",
       persisted: "存储：已防止被自动清理。",
       notPersisted: "存储：手机空间不足时，浏览器可能会清除数据。请安装应用并导出备份。",
       seat: "座椅", backRest: "靠背", remove: "移除", removeSetting: "移除设置",
-      settingName: "设置项", settingValue: "数值", version: "版本"
+      settingName: "设置项", settingValue: "数值", version: "版本",
+      restTimer: "休息计时", rest: "组间休息", sec: "秒", defaultRest: "默认组间休息",
+      defaultRestNote: "单位为秒。适用于所有未单独设置休息时间的器械。",
+      restNote: "留空则使用默认时间（{t}）。", startRest: "开始休息 · {t}", restLabel: "休息",
+      go: "开始下一组！", stop: "停止", defaultTag: "默认"
     }
   };
   var lang = "en";
@@ -121,6 +135,11 @@
     });
     $("langSelect").value = lang;
     $("appVersion").textContent = t("version") + " " + APP_VERSION;
+    $("homeTimer").setAttribute("aria-label", t("restTimer"));
+    $("defaultRest").placeholder = "90";
+    updateTimerLabels();
+    if (!$("timerBar").hidden) $("timerWhat").textContent = timerLabel();
+    if ($("timerBar").classList.contains("done")) $("timerClock").textContent = t("go");
     updateStorageNote();
     render();
   }
@@ -143,6 +162,12 @@
     }
     return null;
   }
+
+  var prefs = { rest: 90 };
+  try { var pr = JSON.parse(localStorage.getItem(PREFS_KEY) || "null"); if (pr && pr.rest > 0) prefs.rest = pr.rest; } catch (e) {}
+  function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {} }
+  function parseSecs(v) { var n = parseInt(String(v).replace(/[^0-9]/g, ""), 10); return n > 0 && n <= 3600 ? n : 0; }
+  function fmtClock(sec) { sec = Math.max(0, Math.ceil(sec)); return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0"); }
 
   /* ---------------- Helpers ---------------- */
   function fmtDate(ms) {
@@ -229,6 +254,8 @@
     $("sheetKind").textContent = isNew ? (opts.code ? t("newCode") : t("noCode")) : (m.updatedAt ? t("updated") + " " + fmtDate(m.updatedAt) : "");
     $("fName").value = m.name || ""; $("fWeight").value = m.weight ? fmtWeight(m.weight).replace(" kg", "") : "";
     $("fSets").value = m.sets || ""; $("fReps").value = m.reps || ""; $("fNotes").value = m.notes || "";
+    $("fRest").value = m.rest || ""; $("fRest").placeholder = String(prefs.rest);
+    updateTimerLabels();
     var box = $("settings"); box.textContent = "";
     (m.settings || []).forEach(function (s) { box.append(settingRow(s)); });
 
@@ -282,7 +309,7 @@
       name: $("fName").value.trim() || t("unnamed"),
       weight: $("fWeight").value.trim().replace(",", "."),
       sets: $("fSets").value.trim(), reps: $("fReps").value.trim(),
-      notes: $("fNotes").value.trim(), settings: settings, codes: codes,
+      notes: $("fNotes").value.trim(), settings: settings, codes: codes, rest: parseSecs($("fRest").value) || "",
       history: (old.history || []).slice(), createdAt: old.createdAt || Date.now(), updatedAt: Date.now()
     };
   }
@@ -397,11 +424,11 @@
 
   /* ---------------- Backup ---------------- */
   function exportBackup() {
-    var data = JSON.stringify({ app: "setcard", version: 1, exportedAt: new Date().toISOString(), machines: db.machines }, null, 2);
+    var data = JSON.stringify({ app: "gym-machine", version: 1, exportedAt: new Date().toISOString(), machines: db.machines }, null, 2);
     var blob = new Blob([data], { type: "application/json" });
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "setcard-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+    a.download = "gym-machine-backup-" + new Date().toISOString().slice(0, 10) + ".json";
     document.body.append(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
     toast(t("exported"));
@@ -411,7 +438,7 @@
     r.onload = function () {
       var data;
       try { data = JSON.parse(r.result); } catch (e) { data = null; }
-      if (!data || data.app !== "setcard" || !data.machines || typeof data.machines !== "object") { toast(t("importBad")); return; }
+      if (!data || (data.app !== "gym-machine" && data.app !== "setcard") || !data.machines || typeof data.machines !== "object") { toast(t("importBad")); return; }
       var n = 0;
       Object.keys(data.machines).forEach(function (id) {
         var inc = data.machines[id], have = db.machines[id];
@@ -455,6 +482,66 @@
     });
   }
 
+  /* ---------------- Rest timer ---------------- */
+  // The countdown runs from an end time, so it stays correct even if the phone throttles the page.
+  var timer = { end: 0, total: 0, name: "", tick: null, doneTimer: null };
+  var wakeLock = null, audio = null;
+  function sheetRest() { return current ? (parseSecs($("fRest").value) || prefs.rest) : prefs.rest; }
+  function updateTimerLabels() {
+    $("homeTimerLabel").textContent = fmtClock(prefs.rest);
+    $("restNote").textContent = t("restNote", { t: fmtClock(prefs.rest) });
+    $("sheetTimerLabel").textContent = t("startRest", { t: fmtClock(sheetRest()) });
+    if (document.activeElement !== $("defaultRest")) $("defaultRest").value = String(prefs.rest);
+  }
+  function beep() {
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      [0, 0.35, 0.7].forEach(function (at, i) {
+        var o = audio.createOscillator(), g = audio.createGain(), t0 = audio.currentTime + at;
+        o.frequency.value = i === 2 ? 1320 : 880; o.type = "sine";
+        g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.4, t0 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.25);
+        o.connect(g); g.connect(audio.destination); o.start(t0); o.stop(t0 + 0.3);
+      });
+    } catch (e) {}
+  }
+  function keepScreenOn(on) {
+    if (on && "wakeLock" in navigator && !wakeLock) {
+      navigator.wakeLock.request("screen").then(function (l) { wakeLock = l; l.addEventListener("release", function () { wakeLock = null; }); }).catch(function () {});
+    } else if (!on && wakeLock) { wakeLock.release().catch(function () {}); wakeLock = null; }
+  }
+  function timerLabel() { return timer.name ? t("restLabel") + " · " + timer.name : t("restLabel"); }
+  function startTimer(secs, name) {
+    // unlock audio inside the tap so the end beep is allowed to play
+    try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === "suspended") audio.resume(); } catch (e) {}
+    clearTimeout(timer.doneTimer);
+    timer.total = secs; timer.end = Date.now() + secs * 1000; timer.name = name || "";
+    $("timerBar").hidden = false; $("timerBar").classList.remove("done"); document.body.classList.add("timing");
+    keepScreenOn(true);
+    clearInterval(timer.tick); timer.tick = setInterval(renderTimer, 250); renderTimer();
+  }
+  function renderTimer() {
+    var left = (timer.end - Date.now()) / 1000;
+    $("timerWhat").textContent = timerLabel();
+    $("timerClock").textContent = fmtClock(left);
+    $("timerFill").style.width = Math.min(100, Math.max(0, 100 * (1 - left / timer.total))) + "%";
+    if (left <= 0) finishTimer();
+  }
+  function finishTimer() {
+    clearInterval(timer.tick); timer.tick = null;
+    $("timerBar").classList.add("done"); $("timerWhat").textContent = timerLabel(); $("timerClock").textContent = t("go");
+    if (navigator.vibrate) try { navigator.vibrate([400, 150, 400, 150, 700]); } catch (e) {}
+    beep();
+    timer.doneTimer = setTimeout(stopTimer, 15000);
+  }
+  function stopTimer() {
+    clearInterval(timer.tick); clearTimeout(timer.doneTimer); timer.tick = null;
+    $("timerBar").hidden = true; document.body.classList.remove("timing"); keepScreenOn(false);
+  }
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && timer.tick) { keepScreenOn(true); renderTimer(); }
+  });
+
   /* ---------------- Wiring ---------------- */
   $("scanBtn").addEventListener("click", openScanner);
   $("scanCancel").addEventListener("click", function () { closeScanner(); });
@@ -468,6 +555,21 @@
     });
   });
   $("search").addEventListener("input", render);
+  $("homeTimer").addEventListener("click", function () { startTimer(prefs.rest, ""); });
+  $("sheetTimer").addEventListener("click", function () {
+    startTimer(sheetRest(), $("fName").value.trim());
+  });
+  $("fRest").addEventListener("input", updateTimerLabels);
+  $("timerPlus").addEventListener("click", function () {
+    if (timer.tick) { timer.end += 15000; timer.total += 15; renderTimer(); }
+    else startTimer(15, timer.name);
+  });
+  $("timerStop").addEventListener("click", stopTimer);
+  $("defaultRest").addEventListener("change", function () {
+    var v = parseSecs(this.value);
+    if (v) { prefs.rest = v; savePrefs(); }
+    this.value = String(prefs.rest); updateTimerLabels();
+  });
   $("addManual").addEventListener("click", function () { openSheet(newId()); });
   $("close").addEventListener("click", function () { closeSheet(); });
   $("addSetting").addEventListener("click", function () { var r = settingRow({}); $("settings").append(r); r.querySelector("input").focus(); });

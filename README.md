@@ -1,8 +1,8 @@
-# gym_machine – Setcard
+# Gym Machine
 
 Remember settings of your gym machines and recall them via QR code and track progress.
 
-Setcard is a small web app for your phone. Scan the QR code or barcode on a gym machine and it shows your saved seat and lever settings, weight, sets and reps. The first scan of a code lets you enter them; every later scan opens them straight away. It works completely offline, which helps in basement gyms with no reception.
+Gym Machine is a small web app for your phone. Scan the QR code or barcode on a gym machine and it shows your saved seat and lever settings, weight, sets and reps. The first scan of a code lets you enter them; every later scan opens them straight away. It works completely offline, which helps in basement gyms with no reception.
 
 **Open the app:** https://blablubbbb.github.io/gym_machine/
 
@@ -17,6 +17,7 @@ Setcard is a small web app for your phone. Scan the QR code or barcode on a gym 
 - Any code works: the app only uses it to recognise the machine, whatever the code links to
 - Per machine: name, weight, sets, reps, any number of settings (seat, back rest, lever …) and notes
 - “Log today” keeps a history of what you lifted
+- Rest timer between sets: one default rest time (90 s unless you change it), optionally a different one per machine. Vibrates and beeps when the rest is over and keeps the screen on while it counts down
 - Machines without a code can be added by hand; a code can be linked to a machine later
 - Works offline after the first visit and can be installed on the home screen
 - German, English and Simplified Chinese (picked from the browser's preferred languages, changeable under **Data and settings**)
@@ -26,7 +27,7 @@ Setcard is a small web app for your phone. Scan the QR code or barcode on a gym 
 
 1. Open https://blablubbbb.github.io/gym_machine/ once while you have internet.
 2. Tap the ⋮ menu → **Add to home screen** (or **Install app**).
-3. Start Setcard from the home screen. From now on it works without internet.
+3. Start Gym Machine from the home screen. From now on it works without internet.
 
 On iPhone, open the link in Safari → Share → **Add to Home Screen**. Live scanning of QR codes works there too; barcodes need Chrome on Android.
 
@@ -38,7 +39,7 @@ Because the data lives only on the phone, clearing the browser data or uninstall
 
 ## Deutsch
 
-Setcard merkt sich die Einstellungen deiner Fitnessgeräte. Scanne den QR-Code oder Barcode am Gerät, und die App zeigt Sitz- und Hebeleinstellungen, Gewicht, Sätze und Wiederholungen. Sie funktioniert komplett offline. Alle Daten bleiben auf deinem Handy; es gibt keinen Server und kein Tracking.
+Gym Machine merkt sich die Einstellungen deiner Fitnessgeräte. Scanne den QR-Code oder Barcode am Gerät, und die App zeigt Sitz- und Hebeleinstellungen, Gewicht, Sätze und Wiederholungen, und hat einen Pausentimer zwischen den Sätzen. Sie funktioniert komplett offline. Alle Daten bleiben auf deinem Handy; es gibt keinen Server und kein Tracking.
 
 Installieren: Link einmal mit Internet in Chrome öffnen → ⋮ → **Zum Startbildschirm hinzufügen**.
 
@@ -55,6 +56,6 @@ To add a language, copy the `en` block in `TEXT` at the top of `app.js`, transla
 
 ## Licenses
 
-- Setcard: MIT, see [LICENSE](LICENSE)
+- Gym Machine: MIT, see [LICENSE](LICENSE)
 - [jsQR](https://github.com/cozmo/jsQR) 1.4.0: Apache License 2.0, see [vendor/jsQR-LICENSE.txt](vendor/jsQR-LICENSE.txt)
 - [Barlow](https://github.com/jpt/barlow) fonts: SIL Open Font License 1.1, see [fonts/OFL.txt](fonts/OFL.txt)

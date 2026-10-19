@@ -1,7 +1,7 @@
 /* Gym Machine — offline gym machine notes. MIT License. */
 (function () {
   "use strict";
-  var APP_VERSION = "1.2.0";
+  var APP_VERSION = "1.3.0";
   // Storage keys keep the old "setcard" prefix so existing data survives the rename
   var KEY = "setcard.v1";
   var PREFS_KEY = "setcard.prefs";
@@ -41,7 +41,11 @@
       restTimer: "Rest timer", rest: "Rest between sets", sec: "s", defaultRest: "Default rest between sets",
       defaultRestNote: "In seconds. Used for every machine without its own rest time.",
       restNote: "Leave empty to use your default ({t}).", startRest: "Start rest · {t}", restLabel: "Rest",
-      go: "Next set!", stop: "Stop", defaultTag: "default"
+      go: "Next set!", stop: "Stop", defaultTag: "default", startShort: "Start · {t}",
+      share: "Share app", shareShow: "Show QR code and link", shareTitle: "Share Gym Machine",
+      shareNote: "Let a friend scan this code with their phone camera to open the app.",
+      shareLink: "Share link", copyLink: "Copy link", copied: "Link copied", close: "Close",
+      shareText: "Gym Machine: scan the code on a gym machine and see your settings, sets and reps. Free and works offline."
     },
     de: {
       scan: "Gerät scannen", scanHint: "QR-Code oder Barcode am Gerät", find: "Gerät suchen",
@@ -74,7 +78,11 @@
       restTimer: "Pausentimer", rest: "Pause zwischen Sätzen", sec: "s", defaultRest: "Standardpause zwischen Sätzen",
       defaultRestNote: "In Sekunden. Gilt für alle Geräte ohne eigene Pausenzeit.",
       restNote: "Leer lassen für deine Standardpause ({t}).", startRest: "Pause starten · {t}", restLabel: "Pause",
-      go: "Nächster Satz!", stop: "Stopp", defaultTag: "Standard"
+      go: "Nächster Satz!", stop: "Stopp", defaultTag: "Standard", startShort: "Starten · {t}",
+      share: "App teilen", shareShow: "QR-Code und Link zeigen", shareTitle: "Gym Machine teilen",
+      shareNote: "Lass jemanden diesen Code mit der Handykamera scannen, um die App zu öffnen.",
+      shareLink: "Link teilen", copyLink: "Link kopieren", copied: "Link kopiert", close: "Schließen",
+      shareText: "Gym Machine: Code am Fitnessgerät scannen und deine Einstellungen, Sätze und Wiederholungen sehen. Kostenlos und funktioniert offline."
     },
     zh: {
       scan: "扫描器械", scanHint: "扫描器械上的二维码或条形码", find: "查找器械",
@@ -107,7 +115,11 @@
       restTimer: "休息计时", rest: "组间休息", sec: "秒", defaultRest: "默认组间休息",
       defaultRestNote: "单位为秒。适用于所有未单独设置休息时间的器械。",
       restNote: "留空则使用默认时间（{t}）。", startRest: "开始休息 · {t}", restLabel: "休息",
-      go: "开始下一组！", stop: "停止", defaultTag: "默认"
+      go: "开始下一组！", stop: "停止", defaultTag: "默认", startShort: "开始 · {t}",
+      share: "分享应用", shareShow: "显示二维码和链接", shareTitle: "分享 Gym Machine",
+      shareNote: "让朋友用手机相机扫描此码，即可打开应用。",
+      shareLink: "分享链接", copyLink: "复制链接", copied: "链接已复制", close: "关闭",
+      shareText: "Gym Machine：扫描健身器械上的码，即可查看你的设置、组数和次数。免费，可离线使用。"
     }
   };
   var lang = "en";
@@ -490,7 +502,9 @@
   function updateTimerLabels() {
     $("homeTimerLabel").textContent = fmtClock(prefs.rest);
     $("restNote").textContent = t("restNote", { t: fmtClock(prefs.rest) });
-    $("sheetTimerLabel").textContent = t("startRest", { t: fmtClock(sheetRest()) });
+    $("sheetTimerLabel").textContent = t("startShort", { t: fmtClock(sheetRest()) });
+    $("sheetTimer").setAttribute("aria-label", t("startRest", { t: fmtClock(sheetRest()) }));
+    $("shareBtn").setAttribute("aria-label", t("share"));
     if (document.activeElement !== $("defaultRest")) $("defaultRest").value = String(prefs.rest);
   }
   function beep() {
@@ -540,6 +554,54 @@
   }
   document.addEventListener("visibilitychange", function () {
     if (!document.hidden && timer.tick) { keepScreenOn(true); renderTimer(); }
+  });
+
+  /* ---------------- Share ---------------- */
+  // The app's own address, so a fork shares its own link
+  var APP_URL = new URL("./", location.href).href;
+  function drawQr(box, text) {
+    box.textContent = "";
+    if (typeof qrcode !== "function") return;
+    var qr = qrcode(0, "M"); qr.addData(text); qr.make();
+    var n = qr.getModuleCount(), q = 4, size = n + 2 * q, d = "";
+    for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (qr.isDark(r, c)) d += "M" + (c + q) + " " + (r + q) + "h1v1h-1z";
+    var NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 " + size + " " + size); svg.setAttribute("shape-rendering", "crispEdges");
+    var bg = document.createElementNS(NS, "rect"); bg.setAttribute("width", size); bg.setAttribute("height", size); bg.setAttribute("fill", "#fff");
+    var p = document.createElementNS(NS, "path"); p.setAttribute("d", d); p.setAttribute("fill", "#000");
+    svg.append(bg, p); box.append(svg);
+  }
+  function openShare() {
+    $("shareUrl").textContent = APP_URL.replace(/^https?:\/\//, "");
+    drawQr($("qrBox"), APP_URL);
+    $("shareLink").hidden = !navigator.share;
+    $("share").hidden = false;
+    history.pushState({ share: true }, "");
+  }
+  function closeShare(fromPop) {
+    if ($("share").hidden) return;
+    $("share").hidden = true;
+    if (!fromPop && history.state && history.state.share) history.back();
+  }
+  function copyLink() {
+    var done = function () { toast(t("copied")); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(APP_URL).then(done, fallback);
+    } else fallback();
+    function fallback() {
+      var ta = document.createElement("textarea"); ta.value = APP_URL; ta.setAttribute("readonly", "");
+      ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.append(ta); ta.select();
+      try { if (document.execCommand("copy")) done(); } catch (e) {}
+      ta.remove();
+    }
+  }
+  $("shareBtn").addEventListener("click", openShare);
+  $("shareBtn2").addEventListener("click", openShare);
+  $("shareClose").addEventListener("click", function () { closeShare(); });
+  $("share").addEventListener("click", function (e) { if (e.target === this) closeShare(); });
+  $("copyLink").addEventListener("click", copyLink);
+  $("shareLink").addEventListener("click", function () {
+    navigator.share({ title: "Gym Machine", text: t("shareText"), url: APP_URL }).catch(function () {});
   });
 
   /* ---------------- Wiring ---------------- */
@@ -600,8 +662,8 @@
     applyLang();
   });
   // Android back button closes the scanner or editor instead of leaving the app
-  window.addEventListener("popstate", function () { closeScanner(true); closeSheet(true); });
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closeScanner(); closeSheet(); } });
+  window.addEventListener("popstate", function () { closeShare(true); closeScanner(true); closeSheet(true); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closeShare(); closeScanner(); closeSheet(); } });
   document.addEventListener("visibilitychange", function () { if (document.hidden && !$("scanner").hidden) closeScanner(); });
 
   load();

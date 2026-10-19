@@ -20,10 +20,15 @@
       <h1>Gym Machine</h1>
       <span id="count" class="muted num"></span>
     </div>
+    <div class="topbtns">
+    <button type="button" id="shareBtn" class="iconbtn" aria-label="Share app">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+    </button>
     <button type="button" id="homeTimer" class="timerbtn num" aria-label="Rest timer">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
       <span id="homeTimerLabel">1:30</span>
     </button>
+    </div>
   </header>
 
   <button class="scan" id="scanBtn" type="button">
@@ -80,6 +85,10 @@
         <span class="label" data-i18n="install">Install</span>
         <button type="button" id="installBtn" class="primary" data-i18n="installBtn">Add to home screen</button>
       </div>
+      <div class="field">
+        <span class="label" data-i18n="share">Share app</span>
+        <button type="button" id="shareBtn2" data-i18n="shareShow">Show QR code and link</button>
+      </div>
       <p class="note" id="storageNote"></p>
       <p class="note"><a href="https://github.com/blablubbbb/gym_machine" target="_blank" rel="noopener" data-i18n="source">Source code on GitHub</a> · <span id="appVersion"></span></p>
     </div>
@@ -122,6 +131,10 @@
       <div class="restrow">
         <input id="fRest" inputmode="numeric" class="num" autocomplete="off">
         <span class="muted" data-i18n="sec">s</span>
+        <button type="button" id="sheetTimer" class="timerstart num">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+          <span id="sheetTimerLabel"></span>
+        </button>
       </div>
       <p class="note" id="restNote"></p>
     </div>
@@ -136,11 +149,6 @@
       <label class="label" for="fNotes" data-i18n="notes">Notes</label>
       <textarea id="fNotes" data-i18n-ph="notesPh" placeholder="Grip, tempo, what to change next time"></textarea>
     </div>
-
-    <button type="button" id="sheetTimer" class="timerstart num">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
-      <span id="sheetTimerLabel"></span>
-    </button>
 
     <div class="actions">
       <button class="primary" id="save" type="button" data-i18n="save">Save</button>
@@ -195,9 +203,25 @@
   <div class="timerprogress" aria-hidden="true"><i id="timerFill"></i></div>
 </div>
 
+<!-- Share -->
+<section class="share" id="share" hidden role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+  <div class="sharecard">
+    <h2 id="shareTitle" data-i18n="shareTitle">Share Gym Machine</h2>
+    <div class="qrbox" id="qrBox" role="img" aria-label="QR code"></div>
+    <p class="shareurl" id="shareUrl"></p>
+    <p class="note" data-i18n="shareNote">Let a friend scan this code with their phone camera to open the app.</p>
+    <div class="actions">
+      <button type="button" id="shareLink" class="primary" data-i18n="shareLink">Share link</button>
+      <button type="button" id="copyLink" data-i18n="copyLink">Copy link</button>
+    </div>
+    <button type="button" id="shareClose" class="ghost" data-i18n="close">Close</button>
+  </div>
+</section>
+
 <div class="toast" id="toast" hidden role="status"></div>
 
 <script src="vendor/jsQR.js"></script>
+<script src="vendor/qrcode-generator.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

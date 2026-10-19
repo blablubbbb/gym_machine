@@ -18,6 +18,7 @@ Gym Machine is a small web app for your phone. Scan the QR code or barcode on a 
 - Per machine: name, weight, sets, reps, any number of settings (seat, back rest, lever …) and notes
 - “Log today” keeps a history of what you lifted
 - Rest timer between sets: one default rest time (90 s unless you change it), optionally a different one per machine. Vibrates and beeps when the rest is over and keeps the screen on while it counts down
+- Share button with a QR code of the app's link, so friends can scan it straight off your screen
 - Machines without a code can be added by hand; a code can be linked to a machine later
 - Works offline after the first visit and can be installed on the home screen
 - German, English and Simplified Chinese (picked from the browser's preferred languages, changeable under **Data and settings**)
@@ -51,6 +52,7 @@ Plain HTML, CSS and JavaScript, no build step. Serve the folder with any static 
 - `sw.js` – service worker that stores the app on the phone for offline use. **Raise the `CACHE` version whenever you change a file**, otherwise phones keep the old version.
 - `manifest.webmanifest`, `icons/` – home screen installation
 - `vendor/jsQR.js` – QR decoder for browsers without the built-in barcode scanner
+- `vendor/qrcode-generator.js` – draws the QR code on the share screen
 
 To add a language, copy the `en` block in `TEXT` at the top of `app.js`, translate it, add an `<option>` to `#langSelect` in `index.html` and a date locale to `LOCALES`.
 
@@ -58,4 +60,5 @@ To add a language, copy the `en` block in `TEXT` at the top of `app.js`, transla
 
 - Gym Machine: MIT, see [LICENSE](LICENSE)
 - [jsQR](https://github.com/cozmo/jsQR) 1.4.0: Apache License 2.0, see [vendor/jsQR-LICENSE.txt](vendor/jsQR-LICENSE.txt)
+- [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 2.0.4: MIT, see [vendor/qrcode-generator-LICENSE.txt](vendor/qrcode-generator-LICENSE.txt)
 - [Barlow](https://github.com/jpt/barlow) fonts: SIL Open Font License 1.1, see [fonts/OFL.txt](fonts/OFL.txt)

@@ -1,6 +1,6 @@
 /* Gym Machine service worker: keeps the whole app on the phone so it opens and works offline.
    Bump CACHE when any file changes so phones pick up the new version. */
-var CACHE = "gym-machine-1.4.0";
+var CACHE = "gym-machine-1.4.1";
 var FILES = [
   "./", "index.html", "style.css", "app.js", "manifest.webmanifest",
   "vendor/jsQR.js", "vendor/qrcode-generator.js",

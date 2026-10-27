@@ -1,7 +1,7 @@
 /* Gym Machine — offline gym machine notes. MIT License. */
 (function () {
   "use strict";
-  var APP_VERSION = "1.4.0";
+  var APP_VERSION = "1.4.1";
   // Storage keys keep the old "setcard" prefix so existing data survives the rename
   var KEY = "setcard.v1";
   var PREFS_KEY = "setcard.prefs";
@@ -182,12 +182,22 @@
   function fmtClock(sec) { sec = Math.max(0, Math.ceil(sec)); return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0"); }
 
   /* ---------------- Helpers ---------------- */
-  function fmtDate(ms) {
+  // "today" / "yesterday" in the app's language for recent dates, otherwise a short date.
+  // standalone = the date stands on its own (capitalised: "Heute"), not inside a sentence ("Geändert heute").
+  function fmtDate(ms, standalone) {
     if (!ms) return "";
-    var d = new Date(ms), opts = { day: "numeric", month: "short" };
+    var d = new Date(ms), now = new Date();
+    var days = Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5);
+    if ((days === 0 || days === 1) && window.Intl && Intl.RelativeTimeFormat) {
+      var word = new Intl.RelativeTimeFormat(LOCALES[lang] || "en-GB", { numeric: "auto" }).format(-days, "day");
+      return standalone ? word.charAt(0).toLocaleUpperCase(LOCALES[lang]) + word.slice(1) : word;
+    }
+    var opts = { day: "numeric", month: "short" };
     if (d.getFullYear() !== new Date().getFullYear()) opts.year = "numeric";
     return d.toLocaleDateString(LOCALES[lang] || "en-GB", opts);
   }
+  // Chinese runs words together without a space
+  function updatedText(ms) { return t("updated") + (lang === "zh" ? "" : " ") + fmtDate(ms); }
   function fmtWeight(w) { return w ? (lang === "de" ? String(w).replace(".", ",") : String(w)) + " kg" : ""; }
   function loadText(w, s, r) {
     var sr = (s || r) ? (s || "?") + " × " + (r || "?") : "";
@@ -243,7 +253,7 @@
       var li = el("li"), b = el("button", "card"); b.type = "button";
       b.append(el("span", "name", m.name || t("unnamed")), el("span", "load num", loadText(m.weight, m.sets, m.reps)));
       var st = (m.settings || []).filter(function (s) { return s.value; }).map(function (s) { return s.label + " " + s.value; }).join(" · ");
-      var meta = [st, m.updatedAt ? t("updated") + " " + fmtDate(m.updatedAt) : ""].filter(Boolean).join("  —  ");
+      var meta = [st, m.updatedAt ? updatedText(m.updatedAt) : ""].filter(Boolean).join("  —  ");
       if (meta) b.append(el("span", "meta num", meta));
       b.addEventListener("click", function () { openSheet(id); });
       li.append(b); ul.append(li);
@@ -270,7 +280,7 @@
     current = { id: id, isNew: isNew, pendingCode: opts.code || null };
 
     $("sheetTitle").textContent = isNew ? t("newMachine") : (m.name || t("unnamed"));
-    $("sheetKind").textContent = isNew ? (opts.code ? t("newCode") : t("noCode")) : (m.updatedAt ? t("updated") + " " + fmtDate(m.updatedAt) : "");
+    $("sheetKind").textContent = isNew ? (opts.code ? t("newCode") : t("noCode")) : (m.updatedAt ? updatedText(m.updatedAt) : "");
     $("fName").value = m.name || ""; $("fWeight").value = m.weight ? fmtWeight(m.weight).replace(" kg", "") : "";
     $("fSets").value = m.sets || ""; $("fReps").value = m.reps || ""; $("fNotes").value = m.notes || "";
     $("fRest").value = m.rest || ""; $("fRest").placeholder = String(prefs.rest);
@@ -304,7 +314,7 @@
       var li = el("li"), x = el("button", "ghost small rm", "✕");
       x.type = "button"; x.setAttribute("aria-label", t("removeEntry") + " " + fmtDate(e.d));
       x.addEventListener("click", function () { removeHistory(e); });
-      li.append(el("span", null, fmtDate(e.d)), el("span", "num grow", loadText(e.w, e.s, e.r)), x); hl.append(li);
+      li.append(el("span", null, fmtDate(e.d, true)), el("span", "num grow", loadText(e.w, e.s, e.r)), x); hl.append(li);
     });
   }
   function removeHistory(entry) {

@@ -1,7 +1,7 @@
 /* Gym Machine — offline gym machine notes. MIT License. */
 (function () {
   "use strict";
-  var APP_VERSION = "1.3.0";
+  var APP_VERSION = "1.4.0";
   // Storage keys keep the old "setcard" prefix so existing data survives the rename
   var KEY = "setcard.v1";
   var PREFS_KEY = "setcard.prefs";
@@ -44,7 +44,7 @@
       go: "Next set!", stop: "Stop", defaultTag: "default", startShort: "Start · {t}",
       share: "Share app", shareShow: "Show QR code and link", shareTitle: "Share Gym Machine",
       shareNote: "Let a friend scan this code with their phone camera to open the app.",
-      shareLink: "Share link", copyLink: "Copy link", copied: "Link copied", close: "Close",
+      shareLink: "Share link", copyLink: "Copy link", copied: "Link copied", close: "Close", removeEntry: "Remove entry", entryRemoved: "Entry removed", undo: "Undo",
       shareText: "Gym Machine: scan the code on a gym machine and see your settings, sets and reps. Free and works offline."
     },
     de: {
@@ -81,7 +81,7 @@
       go: "Nächster Satz!", stop: "Stopp", defaultTag: "Standard", startShort: "Starten · {t}",
       share: "App teilen", shareShow: "QR-Code und Link zeigen", shareTitle: "Gym Machine teilen",
       shareNote: "Lass jemanden diesen Code mit der Handykamera scannen, um die App zu öffnen.",
-      shareLink: "Link teilen", copyLink: "Link kopieren", copied: "Link kopiert", close: "Schließen",
+      shareLink: "Link teilen", copyLink: "Link kopieren", copied: "Link kopiert", close: "Schließen", removeEntry: "Eintrag entfernen", entryRemoved: "Eintrag entfernt", undo: "Rückgängig",
       shareText: "Gym Machine: Code am Fitnessgerät scannen und deine Einstellungen, Sätze und Wiederholungen sehen. Kostenlos und funktioniert offline."
     },
     zh: {
@@ -118,7 +118,7 @@
       go: "开始下一组！", stop: "停止", defaultTag: "默认", startShort: "开始 · {t}",
       share: "分享应用", shareShow: "显示二维码和链接", shareTitle: "分享 Gym Machine",
       shareNote: "让朋友用手机相机扫描此码，即可打开应用。",
-      shareLink: "分享链接", copyLink: "复制链接", copied: "链接已复制", close: "关闭",
+      shareLink: "分享链接", copyLink: "复制链接", copied: "链接已复制", close: "关闭", removeEntry: "删除记录", entryRemoved: "记录已删除", undo: "撤销",
       shareText: "Gym Machine：扫描健身器械上的码，即可查看你的设置、组数和次数。免费，可离线使用。"
     }
   };
@@ -206,9 +206,16 @@
     return "";
   }
   var toastTimer;
-  function toast(msg) {
-    var el = $("toast"); el.textContent = msg; el.hidden = false;
-    clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.hidden = true; }, 2200);
+  // Optional action button (e.g. Undo); the toast then stays a little longer
+  function toast(msg, actionLabel, action) {
+    var box = $("toast"); box.textContent = ""; box.append(document.createTextNode(msg));
+    if (actionLabel) {
+      var b = document.createElement("button"); b.type = "button"; b.className = "toastbtn"; b.textContent = actionLabel;
+      b.addEventListener("click", function () { box.hidden = true; clearTimeout(toastTimer); action(); });
+      box.append(b);
+    }
+    box.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { box.hidden = true; }, actionLabel ? 6000 : 2200);
   }
   function status(msg, isErr) {
     var el = $("status");
@@ -280,18 +287,40 @@
         .forEach(function (oid) { var o = el("option", null, db.machines[oid].name || t("unnamed")); o.value = oid; sel.append(o); });
     }
 
-    var h = (m.history || []).slice().reverse();
-    $("historyBox").hidden = !h.length;
-    var hl = $("history"); hl.textContent = "";
-    h.slice(0, 30).forEach(function (e) {
-      var li = el("li"); li.append(el("span", null, fmtDate(e.d)), el("span", "num", loadText(e.w, e.s, e.r))); hl.append(li);
-    });
+    renderHistory(m.history || []);
 
     renderCodes(m.codes || []);
     $("delBox").hidden = isNew; $("confirm").hidden = true; $("del").hidden = false;
     $("sheet").hidden = false; $("sheet").scrollTop = 0; document.body.style.overflow = "hidden";
     if (opts.replace && history.state) history.replaceState({ sheet: true }, ""); else history.pushState({ sheet: true }, "");
     if (isNew) setTimeout(function () { $("fName").focus(); }, 60);
+  }
+  // History entries are removed (and saved) straight away, with Undo in the toast
+  function renderHistory(list) {
+    var h = list.slice().reverse();
+    $("historyBox").hidden = !h.length;
+    var hl = $("history"); hl.textContent = "";
+    h.slice(0, 30).forEach(function (e) {
+      var li = el("li"), x = el("button", "ghost small rm", "✕");
+      x.type = "button"; x.setAttribute("aria-label", t("removeEntry") + " " + fmtDate(e.d));
+      x.addEventListener("click", function () { removeHistory(e); });
+      li.append(el("span", null, fmtDate(e.d)), el("span", "num grow", loadText(e.w, e.s, e.r)), x); hl.append(li);
+    });
+  }
+  function removeHistory(entry) {
+    var id = current && current.id, m = id && db.machines[id];
+    if (!m || !m.history) return;
+    var i = m.history.indexOf(entry);
+    if (i === -1) return;
+    m.history.splice(i, 1);
+    try { persist(); } catch (e) { m.history.splice(i, 0, entry); toast(t("saveFailed")); return; }
+    renderHistory(m.history);
+    toast(t("entryRemoved"), t("undo"), function () {
+      var mm = db.machines[id]; if (!mm) return;
+      mm.history = mm.history || []; mm.history.splice(Math.min(i, mm.history.length), 0, entry);
+      try { persist(); } catch (e) { return; }
+      if (current && current.id === id) renderHistory(mm.history);
+    });
   }
   var codesDraft = [];
   function renderCodes(codes) {

@@ -16,7 +16,7 @@ Gym Machine is a small web app for your phone. Scan the QR code or barcode on a 
 - Live scanning of QR codes and common barcodes (EAN, Code 128 and others) with the phone camera, or from a photo
 - Any code works: the app only uses it to recognise the machine, whatever the code links to
 - Per machine: name, weight, sets, reps, any number of settings (seat, back rest, lever …) and notes
-- “Log today” keeps a history of what you lifted
+- “Log today” keeps a history of what you lifted; a wrong entry can be removed with ✕ (and restored with Undo)
 - Rest timer between sets: one default rest time (90 s unless you change it), optionally a different one per machine. Vibrates and beeps when the rest is over and keeps the screen on while it counts down
 - Share button with a QR code of the app's link, so friends can scan it straight off your screen
 - Machines without a code can be added by hand; a code can be linked to a machine later
